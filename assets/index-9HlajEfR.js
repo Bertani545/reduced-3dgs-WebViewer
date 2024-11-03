@@ -281,7 +281,7 @@ class Matrix4x4 {
     }
 }
 
-// Zt
+// Zt, U = computeTransformationMatrices
 class Camera extends TransformNode {
     constructor(p=new Vector3D(0,0,0), q=new Quaternion, fx=1132, fy=1132, near=.01, far=1e3) {
         super();
@@ -409,7 +409,8 @@ function to32BitFloats(numbers, start, end) {
     return floats
 }
 
-class g extends eventManager {
+// g
+class loadGaussians extends eventManager { 
     constructor() {
         super();
         const e = {
@@ -447,9 +448,9 @@ class g extends eventManager {
                 for (let s = 0; s < t; s++) {
                     let o = 48 * s;
                     for (let i = 0; i < 8; i++)
-                        this._shs_rgb[0][8 * s + i] = z(l[o], l[o + 3]),
-                        this._shs_rgb[1][8 * s + i] = z(l[o + 1], l[o + 3 + 1]),
-                        this._shs_rgb[2][8 * s + i] = z(l[o + 2], l[o + 3 + 2]),
+                        this._shs_rgb[0][8 * s + i] = combine16BitFloats(l[o], l[o + 3]),
+                        this._shs_rgb[1][8 * s + i] = combine16BitFloats(l[o + 1], l[o + 3 + 1]),
+                        this._shs_rgb[2][8 * s + i] = combine16BitFloats(l[o + 2], l[o + 3 + 2]),
                         o += 6
                 }
             for (let s = 0; s < this._vertexCount; s++) {
@@ -470,12 +471,12 @@ class g extends eventManager {
                 U[4 * (8 * s + 7) + 1] = d[32 * s + 24 + 1],
                 U[4 * (8 * s + 7) + 2] = d[32 * s + 24 + 2],
                 U[4 * (8 * s + 7) + 3] = d[32 * s + 24 + 3];
-                const o = Y.RotationFromQuaternion(new I(this._rotations[4 * s + 1],this._rotations[4 * s + 2],this._rotations[4 * s + 3],-this._rotations[4 * s + 0]))
-                  , i = Y.Diagonal(new X(this._scales[3 * s + 0],this._scales[3 * s + 1],this._scales[3 * s + 2])).multiply(o).buffer
+                const o = Matrix3x3.RotationFromQuaternion(new Quaternion(this._rotations[4 * s + 1],this._rotations[4 * s + 2],this._rotations[4 * s + 3],-this._rotations[4 * s + 0]))
+                  , i = Matrix3x3.Diagonal(new Vector3D(this._scales[3 * s + 0],this._scales[3 * s + 1],this._scales[3 * s + 2])).multiply(o).buffer
                   , V = [i[0] * i[0] + i[3] * i[3] + i[6] * i[6], i[0] * i[1] + i[3] * i[4] + i[6] * i[7], i[0] * i[2] + i[3] * i[5] + i[6] * i[8], i[1] * i[1] + i[4] * i[4] + i[7] * i[7], i[1] * i[2] + i[4] * i[5] + i[7] * i[8], i[2] * i[2] + i[5] * i[5] + i[8] * i[8]];
-                this._data[8 * s + 4] = z(4 * V[0], 4 * V[1]),
-                this._data[8 * s + 5] = z(4 * V[2], 4 * V[3]),
-                this._data[8 * s + 6] = z(4 * V[4], 4 * V[5])
+                this._data[8 * s + 4] = combine16BitFloats(4 * V[0], 4 * V[1]),
+                this._data[8 * s + 5] = combine16BitFloats(4 * V[2], 4 * V[3]),
+                this._data[8 * s + 6] = combine16BitFloats(4 * V[4], 4 * V[5])
             }
             this.dispatchEvent(e)
         }
@@ -493,7 +494,7 @@ class g extends eventManager {
         }
         ,
         this.rotate = n=>{
-            const l = Y.RotationFromQuaternion(n).buffer
+            const l = Matrix3x3.RotationFromQuaternion(n).buffer
               , t = new Float32Array(this._data.buffer);
             for (let a = 0; a < this._vertexCount; a++) {
                 const d = this._positions[3 * a + 0]
@@ -505,18 +506,18 @@ class g extends eventManager {
                 t[8 * a + 0] = this._positions[3 * a + 0],
                 t[8 * a + 1] = this._positions[3 * a + 1],
                 t[8 * a + 2] = this._positions[3 * a + 2];
-                const s = new I(this._rotations[4 * a + 1],this._rotations[4 * a + 2],this._rotations[4 * a + 3],this._rotations[4 * a + 0])
+                const s = new Quaternion(this._rotations[4 * a + 1],this._rotations[4 * a + 2],this._rotations[4 * a + 3],this._rotations[4 * a + 0])
                   , o = n.multiply(s);
                 this._rotations[4 * a + 1] = o.x,
                 this._rotations[4 * a + 2] = o.y,
                 this._rotations[4 * a + 3] = o.z,
                 this._rotations[4 * a + 0] = o.w;
-                const i = Y.RotationFromQuaternion(new I(this._rotations[4 * a + 1],this._rotations[4 * a + 2],this._rotations[4 * a + 3],-this._rotations[4 * a + 0]))
-                  , V = Y.Diagonal(new X(this._scales[3 * a + 0],this._scales[3 * a + 1],this._scales[3 * a + 2])).multiply(i).buffer
+                const i = Matrix3x3.RotationFromQuaternion(new Quaternion(this._rotations[4 * a + 1],this._rotations[4 * a + 2],this._rotations[4 * a + 3],-this._rotations[4 * a + 0]))
+                  , V = Matrix3x3.Diagonal(new Vector3D(this._scales[3 * a + 0],this._scales[3 * a + 1],this._scales[3 * a + 2])).multiply(i).buffer
                   , r = [V[0] * V[0] + V[3] * V[3] + V[6] * V[6], V[0] * V[1] + V[3] * V[4] + V[6] * V[7], V[0] * V[2] + V[3] * V[5] + V[6] * V[8], V[1] * V[1] + V[4] * V[4] + V[7] * V[7], V[1] * V[2] + V[4] * V[5] + V[7] * V[8], V[2] * V[2] + V[5] * V[5] + V[8] * V[8]];
-                this._data[8 * a + 4] = z(4 * r[0], 4 * r[1]),
-                this._data[8 * a + 5] = z(4 * r[2], 4 * r[3]),
-                this._data[8 * a + 6] = z(4 * r[4], 4 * r[5])
+                this._data[8 * a + 4] = combine16BitFloats(4 * r[0], 4 * r[1]),
+                this._data[8 * a + 5] = combine16BitFloats(4 * r[2], 4 * r[3]),
+                this._data[8 * a + 6] = combine16BitFloats(4 * r[4], 4 * r[5])
             }
             this.dispatchEvent(e)
         }
@@ -533,12 +534,12 @@ class g extends eventManager {
                 this._scales[3 * t + 0] *= n.x,
                 this._scales[3 * t + 1] *= n.y,
                 this._scales[3 * t + 2] *= n.z;
-                const a = Y.RotationFromQuaternion(new I(this._rotations[4 * t + 1],this._rotations[4 * t + 2],this._rotations[4 * t + 3],-this._rotations[4 * t + 0]))
-                  , d = Y.Diagonal(new X(this._scales[3 * t + 0],this._scales[3 * t + 1],this._scales[3 * t + 2])).multiply(a).buffer
+                const a = Matrix3x3.RotationFromQuaternion(new Quaternion(this._rotations[4 * t + 1],this._rotations[4 * t + 2],this._rotations[4 * t + 3],-this._rotations[4 * t + 0]))
+                  , d = Matrix3x3.Diagonal(new Vector3D(this._scales[3 * t + 0],this._scales[3 * t + 1],this._scales[3 * t + 2])).multiply(a).buffer
                   , U = [d[0] * d[0] + d[3] * d[3] + d[6] * d[6], d[0] * d[1] + d[3] * d[4] + d[6] * d[7], d[0] * d[2] + d[3] * d[5] + d[6] * d[8], d[1] * d[1] + d[4] * d[4] + d[7] * d[7], d[1] * d[2] + d[4] * d[5] + d[7] * d[8], d[2] * d[2] + d[5] * d[5] + d[8] * d[8]];
-                this._data[8 * t + 4] = z(4 * U[0], 4 * U[1]),
-                this._data[8 * t + 5] = z(4 * U[2], 4 * U[3]),
-                this._data[8 * t + 6] = z(4 * U[4], 4 * U[5])
+                this._data[8 * t + 4] = combine16BitFloats(4 * U[0], 4 * U[1]),
+                this._data[8 * t + 5] = combine16BitFloats(4 * U[2], 4 * U[3]),
+                this._data[8 * t + 6] = combine16BitFloats(4 * U[4], 4 * U[5])
             }
             this.dispatchEvent(e)
         }
@@ -694,11 +695,12 @@ class g extends eventManager {
     }
 }
 
-g.RowLength = 32;
+loadGaussians.RowLength = 32;
 
-class Ot {
-    static async LoadAsync(e, n, l) {
-        const t = await fetch(e, {
+// Ot
+class loadSplatFile {
+    static async LoadAsync(file, n, l) {
+        const t = await fetch(file, {
             mode: "cors",
             credentials: "omit"
         });
@@ -738,8 +740,12 @@ class Ot {
         )
     }
 }
+
+
 const D = .28209479177387814;
-class nt {
+
+// nt
+class loadPLYFile {
     static async LoadAsync(e, n, l, t="", a=false, d=false) {
         const U = await fetch(e, {
             mode: "no-cors",
@@ -854,26 +860,26 @@ class nt {
             i = a[U.rot_1.offset / 4 + Q],
             V = a[U.rot_2.offset / 4 + Q],
             r = a[U.rot_3.offset / 4 + Q],
-            s = new I(i,V,r,o),
+            s = new Quaternion(i,V,r,o),
             s = s.normalize(),
             e.rotations[4 * h + 0] = s.w,
             e.rotations[4 * h + 1] = s.x,
             e.rotations[4 * h + 2] = s.y,
             e.rotations[4 * h + 3] = s.z;
-            const R = Y.RotationFromQuaternion(new I(e.rotations[4 * h + 1],e.rotations[4 * h + 2],e.rotations[4 * h + 3],-e.rotations[4 * h + 0]))
-              , W = Y.Diagonal(new X(e.scales[3 * h + 0],e.scales[3 * h + 1],e.scales[3 * h + 2])).multiply(R).buffer
+            const R = Matrix3x3.RotationFromQuaternion(new Quaternion(e.rotations[4 * h + 1],e.rotations[4 * h + 2],e.rotations[4 * h + 3],-e.rotations[4 * h + 0]))
+              , W = Matrix3x3.Diagonal(new Vector3D(e.scales[3 * h + 0],e.scales[3 * h + 1],e.scales[3 * h + 2])).multiply(R).buffer
               , T = [W[0] * W[0] + W[3] * W[3] + W[6] * W[6], W[0] * W[1] + W[3] * W[4] + W[6] * W[7], W[0] * W[2] + W[3] * W[5] + W[6] * W[8], W[1] * W[1] + W[4] * W[4] + W[7] * W[7], W[1] * W[2] + W[4] * W[5] + W[7] * W[8], W[2] * W[2] + W[5] * W[5] + W[8] * W[8]];
-            e.data[8 * h + 4] = z(4 * T[0], 4 * T[1]),
-            e.data[8 * h + 5] = z(4 * T[2], 4 * T[3]),
-            e.data[8 * h + 6] = z(4 * T[4], 4 * T[5]),
-            e.shs_rgb[0][8 * h] = z(a[U.f_dc_0.offset / 4 + Q], a[U.f_rest_0.offset / 4 + Q]),
-            e.shs_rgb[1][8 * h] = z(a[U.f_dc_1.offset / 4 + Q], a[U.f_rest_15.offset / 4 + Q]),
-            e.shs_rgb[2][8 * h] = z(a[U.f_dc_2.offset / 4 + Q], a[U.f_rest_30.offset / 4 + Q]);
+            e.data[8 * h + 4] = combine16BitFloats(4 * T[0], 4 * T[1]),
+            e.data[8 * h + 5] = combine16BitFloats(4 * T[2], 4 * T[3]),
+            e.data[8 * h + 6] = combine16BitFloats(4 * T[4], 4 * T[5]),
+            e.shs_rgb[0][8 * h] = combine16BitFloats(a[U.f_dc_0.offset / 4 + Q], a[U.f_rest_0.offset / 4 + Q]),
+            e.shs_rgb[1][8 * h] = combine16BitFloats(a[U.f_dc_1.offset / 4 + Q], a[U.f_rest_15.offset / 4 + Q]),
+            e.shs_rgb[2][8 * h] = combine16BitFloats(a[U.f_dc_2.offset / 4 + Q], a[U.f_rest_30.offset / 4 + Q]);
             let E = 1;
             for (let p = 1; p < 8; p++)
-                e.shs_rgb[0][8 * h + p] = z(a[U[`f_rest_${E}`].offset / 4 + Q], a[U[`f_rest_${E + 1}`].offset / 4 + Q]),
-                e.shs_rgb[1][8 * h + p] = z(a[U[`f_rest_${E + 15}`].offset / 4 + Q], a[U[`f_rest_${E + 16}`].offset / 4 + Q]),
-                e.shs_rgb[2][8 * h + p] = z(a[U[`f_rest_${E + 30}`].offset / 4 + Q], a[U[`f_rest_${E + 31}`].offset / 4 + Q]),
+                e.shs_rgb[0][8 * h + p] = combine16BitFloats(a[U[`f_rest_${E}`].offset / 4 + Q], a[U[`f_rest_${E + 1}`].offset / 4 + Q]),
+                e.shs_rgb[1][8 * h + p] = combine16BitFloats(a[U[`f_rest_${E + 15}`].offset / 4 + Q], a[U[`f_rest_${E + 16}`].offset / 4 + Q]),
+                e.shs_rgb[2][8 * h + p] = combine16BitFloats(a[U[`f_rest_${E + 30}`].offset / 4 + Q], a[U[`f_rest_${E + 31}`].offset / 4 + Q]),
                 E += 2
         }
         e.dispatchEvent(nt.changeEvent)
@@ -940,7 +946,7 @@ class nt {
         }
         const i = new DataView(e,d + 11)
           , V = new ArrayBuffer(g.RowLength * U)
-          , r = I.FromEuler(new X(Math.PI / 2,0,0));
+          , r = Quaternion.FromEuler(new Vector3D(Math.PI / 2,0,0));
         for (let c = 0; c < U; c++) {
             const J = new Float32Array(V,c * g.RowLength,3)
               , u = new Float32Array(V,c * g.RowLength + 12,3)
@@ -1019,7 +1025,7 @@ class nt {
                 }
             }
             );
-            let p = new I(W,T,E,R);
+            let p = new Quaternion(W,T,E,R);
             switch (n) {
             case "polycam":
                 {
@@ -1101,7 +1107,7 @@ class nt {
             i = t.getFloat32(U.rot_1.offset + c * F, true),
             V = t.getFloat32(U.rot_2.offset + c * F, true),
             r = t.getFloat32(U.rot_3.offset + c * F, true),
-            s = new I(i,V,r,o),
+            s = new Quaternion(i,V,r,o),
             s = s.normalize(),
             Q.set([128 * s.w + 128, 128 * s.x + 128, 128 * s.y + 128, 128 * s.z + 128], 0),
             R.set([t.getFloat32(U.f_dc_0.offset + c * F, true), t.getFloat32(U.f_dc_1.offset + c * F, true), t.getFloat32(U.f_dc_2.offset + c * F, true)], 0),
@@ -1146,7 +1152,7 @@ class nt {
         const r = new DataView(e,F + 11)
           , c = new ArrayBuffer(g.RowLength * s)
           , J = new ArrayBuffer(192 * s)
-          , u = I.FromEuler(new X(Math.PI / 2,0,0));
+          , u = Quaternion.FromEuler(new Vector3D(Math.PI / 2,0,0));
         console.log("ROW OFFSET " + o);
         for (let h = 0; h < s; h++) {
             const Q = new Float32Array(c,h * g.RowLength,3)
@@ -1241,7 +1247,7 @@ class nt {
                     }
             }
             );
-            let M = new I(w,G,j,p);
+            let M = new Quaternion(w,G,j,p);
             switch (n) {
             case "polycam":
                 {
@@ -1389,7 +1395,7 @@ class nt {
                     ct = R[st].data[q],
                     Ft[it] = ct
                 }
-                let Ut = new I(Ft[1],Ft[2],Ft[3],Ft[0]);
+                let Ut = new Quaternion(Ft[1],Ft[2],Ft[3],Ft[0]);
                 Ut = Ut.normalize(),
                 Wt.set([128 * Ut.w + 128, 128 * Ut.x + 128, 128 * Ut.y + 128, 128 * Ut.z + 128], 0),
                 lt.set([255 * (.5 + D * R[Q.features_dc].data[p.getUint8(N + S.f_dc_0.offset + y * f)]), 255 * (.5 + D * R[Q.features_dc].data[p.getUint8(N + S.f_dc_1.offset + y * f)]), 255 * (.5 + D * R[Q.features_dc].data[p.getUint8(N + S.f_dc_2.offset + y * f)]), 1 / (1 + Math.exp(-R[Q.opacity].data[p.getUint8(N + S.opacity.offset + y * f)])) * 255], 0),
@@ -1415,6 +1421,8 @@ class nt {
         return [w, G, new Int32Array([Z, k, C])]
     }
 }
+
+// At
 function At(b, e, n) {
     var l = e === void 0 ? null : e
       , t = function(F, s) {
