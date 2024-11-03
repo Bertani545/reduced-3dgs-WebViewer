@@ -381,32 +381,34 @@ class Camera extends TransformNode {
 }
 
 // Et
-const Et = new Float32Array(1)
-  , jt = new Int32Array(Et.buffer)
-  , Gt = b=>{
-    Et[0] = b;
-    const e = jt[0]
-      , n = e >> 23 & 255;
-    let l, t = 8388607 & e;
-    return n == 0 ? l = 0 : n < 113 ? (l = 0,
-    t |= 8388608,
-    t >>= 113 - n,
-    16777216 & t && (l = 1,
-    t = 0)) : n < 142 ? l = n - 112 : (l = 31,
-    t = 0),
-    (e >> 31 & 1) << 15 | l << 10 | t >> 13
+const floatRepresentation = new Float32Array(1)
+  , intRepresentation = new Int32Array(floatRepresentation.buffer)
+  , to16BitFloat = b =>{ // Gt
+    floatRepresentation[0] = b;
+    const e = intRepresentation[0]
+      , signAndExponent = e >> 23 & 255;
+    let exponent, mantissa = 8388607 & e;
+    return signAndExponent == 0 ? exponent = 0 : signAndExponent < 113 ? (exponent = 0,
+    mantissa |= 8388608,
+    mantissa >>= 113 - signAndExponent,
+    16777216 & mantissa && (exponent = 1,
+    mantissa = 0)) : signAndExponent < 142 ? exponent = signAndExponent - 112 : (exponent = 31,
+    mantissa = 0),
+    (e >> 31 & 1) << 15 | exponent << 10 | mantissa >> 13
 }
-  , z = (b,e)=>(Gt(b) | Gt(e) << 16) >>> 0;
-var Kt = Math.pow;
-function ht(b, e, n) {
-    let l = new Float32Array(b.length - e);
-    for (let d = e; d < n; d++) {
-        var t = (31744 & b[d]) >> 10
-          , a = 1023 & b[d];
-        l[d] = (b[d] >> 15 ? -1 : 1) * (t ? t === 31 ? a ? NaN : 1 / 0 : Kt(2, t - 15) * (1 + a / 1024) : a / 1024 * 6103515625e-14)
+  , combine16BitFloats = (a,b)=>(to16BitFloat(a) | to16BitFloat(b) << 16) >>> 0; // z
+
+// ht
+function to32BitFloats(numbers, start, end) {
+    let floats = new Float32Array(numbers.length - start);
+    for (let d = start; d < end; d++) {
+        var signAndExponent = (31744 & numbers[d]) >> 10
+          , mantissa = 1023 & numbers[d];
+        floats[d] = (numbers[d] >> 15 ? -1 : 1) * (signAndExponent ? signAndExponent === 31 ? mantissa ? NaN : 1 / 0 : Math.pow(2, signAndExponent - 15) * (1 + mantissa / 1024) : mantissa / 1024 * 6103515625e-14)
     }
-    return l
+    return floats
 }
+
 class g extends eventManager {
     constructor() {
         super();
@@ -691,6 +693,7 @@ class g extends eventManager {
         this._shHeight = e
     }
 }
+
 g.RowLength = 32;
 
 class Ot {
