@@ -727,7 +727,7 @@ class loadSplatFile {
             const d = new Uint8Array(a.target.result);
             n.setData(d)
         }
-        ,
+        ,LoadFromFileAsync
         t.onprogress = a=>{
             l == null || l(a.loaded / a.total)
         }
@@ -885,13 +885,14 @@ class loadPLYFile {
         }
         e.dispatchEvent(loadPLYFile.changeEvent)
     }
-    static async LoadFromFileAsync(e, n, l, t="", a=false, d=false) {
-        await loadPLYFile.loadFileDataAsync(e, l).then(U=>{
+
+    static async LoadFromFileAsync(sourceFile, gausManager, l, t="", a=false, d=false) {
+        await loadPLYFile.loadFileDataAsync(sourceFile, l).then(U=>{
             if (a) {
                 let F, s = performance.now();
                 if (d)
                     F = this._ParseQPLYBuffer(U, t),
-                    n.bandsIndices = F[2];
+                    gausManager.bandsIndices = F[2];
                 else {
                     const r = this._parsePLYHeader(U, t);
                     console.log("PLY HEADER parsed: "),
@@ -903,12 +904,13 @@ class loadPLYFile {
                 const i = new Uint8Array(F[0])
                   , V = new Float32Array(F[1]);
                 s = performance.now(),
-                n.setData(i, V),
+                gausManager.setData(i, V),
                 o = performance.now(),
                 console.log("setting the data in textures took " + (o - s) + " ms.")
             } else {
                 const F = new Uint8Array(this._ParsePLYBuffer(U, t));
-                n.setData(F)
+                console.log(F);
+                gausManager.setData(F)
             }
         }
         )
@@ -1087,7 +1089,7 @@ class loadPLYFile {
             vertexCount: U
         }
     }
-    static _ParseFullPLYBufferFast(e, n, l) {
+    static _ParseFullPLYBufferFast(e, n) {
         const t = new DataView(n,e.size)
           , a = new ArrayBuffer(gaussiansManager.RowLength * e.vertexCount)
           , d = new ArrayBuffer(192 * e.vertexCount)
@@ -1917,7 +1919,7 @@ void main () {
             this.gl.deleteShader(vertexShader),
             this.gl.deleteShader(fragmentShader),
             this.gl.deleteProgram(shaderProgram),
-            this.gl.deleteBuffer(arrayBuffer),
+            this.gl.deleteBuffer(gaussianPositionBuffer),
             rendererIsActive = false)
         }
         ,
@@ -2329,6 +2331,7 @@ function createClickBehavior() {
     )
 }
 const Ht = true;
+let isQuantized = false;
 let isRetrievingFiles = false;
 
 async function loadLocalPLY(fileOrigin) {
@@ -2338,7 +2341,7 @@ async function loadLocalPLY(fileOrigin) {
     loadingBar.style.opacity = "1",
     docCanvas.style.opacity = "0.1";
     const e = "";
-    await loadPLYFile.LoadFromFileAsync(fileOrigin, gaussians, calledWhenParsing, e, Ht, false).then(displayCanvas)
+    await loadPLYFile.LoadFromFileAsync(fileOrigin, gaussians, calledWhenParsing, e, Ht, isQuantized).then(displayCanvas) 
 }
 // For our files
 document.addEventListener("drop", event=>{
